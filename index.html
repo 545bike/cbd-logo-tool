@@ -36,10 +36,14 @@
   .logo-slot img{max-width:100%; max-height:80px; display:block; margin:0 auto; background:
     repeating-conic-gradient(#eee 0% 25%, #fff 0% 50%) 50% / 14px 14px;}
   .logo-slot .ph{color:#aaa; font-size:12px; padding:20px 0;}
-  .remember{display:flex; align-items:center; gap:6px; font-size:12px; color:#777; margin-top:14px;}
+  .logo-slot .clearone{
+    display:none; margin-top:8px; font-size:11px; color:#c0392b; text-decoration:underline; background:none; border:none; cursor:pointer;
+  }
+  .remember{display:flex; align-items:center; gap:6px; font-size:12px; color:#777; margin-top:14px; flex-wrap:wrap;}
   .ctrl{margin-bottom:14px;}
   .ctrl label{display:flex; justify-content:space-between; font-size:13px; color:#444; margin-bottom:4px;}
   .ctrl input[type=range]{width:100%;}
+  .ctrl.disabled{opacity:.4; pointer-events:none;}
   .preview-wrap{
     border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#eee;
     display:flex; align-items:center; justify-content:center; min-height:180px; margin-top:10px;
@@ -74,42 +78,44 @@
 <body>
 
 <h1>Come!BikeDay 社群圖片 LOGO 套版工具</h1>
-<div class="sub">上傳照片，自動壓上固定的兩個 LOGO</div>
+<div class="sub">上傳照片，自動壓上固定的 LOGO（一個或兩個都可以）</div>
 
 <div class="card">
-  <h2><span class="n">1</span>設定兩個 LOGO</h2>
+  <h2><span class="n">1</span>設定 LOGO（可以只放一個，也可以放兩個）</h2>
   <div class="logo-row">
     <label class="logo-slot" id="slotA">
       <div class="lbl">LOGO 一（例如 日月潭）</div>
       <div class="ph" id="phA">點擊上傳圖片</div>
       <img id="imgA" style="display:none">
       <input type="file" id="fileA" accept="image/*">
+      <button type="button" class="clearone" id="clearA">移除這個LOGO</button>
     </label>
     <label class="logo-slot" id="slotB">
       <div class="lbl">LOGO 二（例如 Come!BikeDay）</div>
       <div class="ph" id="phB">點擊上傳圖片</div>
       <img id="imgB" style="display:none">
       <input type="file" id="fileB" accept="image/*">
+      <button type="button" class="clearone" id="clearB">移除這個LOGO</button>
     </label>
   </div>
   <div class="remember">
     <input type="checkbox" id="remember" checked>
-    <label for="remember">記住這兩個 LOGO（存在這台電腦的瀏覽器裡，下次打開不用重傳）</label>
-    <button class="btn secondary" style="margin-left:auto;padding:6px 12px;font-size:12px;" id="clearLogos">清除已記住的LOGO</button>
+    <label for="remember">記住這兩個 LOGO 與版面設定（存在這台電腦的瀏覽器裡，下次打開不用重傳）</label>
+    <button class="btn secondary" style="margin-left:auto;padding:6px 12px;font-size:12px;" id="clearLogos">全部清除記錄</button>
   </div>
 </div>
 
 <div class="card">
-  <h2><span class="n">2</span>調整大小與位置（兩個LOGO底部置中並排）</h2>
-  <div class="ctrl">
+  <h2><span class="n">2</span>調整大小與位置（置中對齊）</h2>
+  <div class="ctrl" id="ctrlA">
     <label>LOGO 一 寬度（佔照片寬度比例）<span id="wValA">15%</span></label>
     <input type="range" id="wRangeA" min="5" max="40" value="15">
   </div>
-  <div class="ctrl">
+  <div class="ctrl" id="ctrlB">
     <label>LOGO 二 寬度（佔照片寬度比例）<span id="wValB">15%</span></label>
     <input type="range" id="wRangeB" min="5" max="40" value="15">
   </div>
-  <div class="ctrl">
+  <div class="ctrl" id="ctrlGap">
     <label>兩個LOGO間距<span id="gVal">2%</span></label>
     <input type="range" id="gRange" min="0" max="10" value="2" step="0.5">
   </div>
@@ -118,7 +124,7 @@
     <input type="range" id="mRange" min="0" max="20" value="5">
   </div>
   <div class="preview-wrap"><canvas id="previewCanvas"></canvas></div>
-  <div class="status">預覽會套用在下方第一張上傳的照片；還沒上傳照片時顯示灰底示意圖。</div>
+  <div class="status">預覽會套用在下方第一張上傳的照片；還沒上傳照片時顯示灰底示意圖。只放一個LOGO時，該LOGO會自動水平置中。</div>
 </div>
 
 <div class="card">
@@ -139,6 +145,7 @@
 
 <script>
 const state = { logoA:null, logoB:null, photos:[], results:[] };
+const SETTINGS_KEY = 'cbd_settings_v1';
 
 function readAsImage(file){
   return new Promise((resolve,reject)=>{
@@ -154,32 +161,56 @@ function readAsImage(file){
   });
 }
 
-function setupLogoSlot(fileInputId, imgId, phId, key){
+function setupLogoSlot(fileInputId, imgId, phId, clearBtnId, key){
   const input = document.getElementById(fileInputId);
   const imgEl = document.getElementById(imgId);
   const ph = document.getElementById(phId);
+  const clearBtn = document.getElementById(clearBtnId);
+
   input.addEventListener('change', async ()=>{
     if(!input.files[0]) return;
     const {img, dataUrl} = await readAsImage(input.files[0]);
     state[key] = img;
     imgEl.src = dataUrl; imgEl.style.display='block'; ph.style.display='none';
+    clearBtn.style.display='inline-block';
     if(document.getElementById('remember').checked){
       try{ localStorage.setItem('cbd_'+key, dataUrl); }catch(e){}
     }
     updatePreview();
     updateProcessBtn();
+    updateCtrlVisibility();
+  });
+
+  clearBtn.addEventListener('click', (e)=>{
+    e.preventDefault(); e.stopPropagation();
+    state[key] = null;
+    input.value = '';
+    imgEl.src=''; imgEl.style.display='none'; ph.style.display='block';
+    clearBtn.style.display='none';
+    localStorage.removeItem('cbd_'+key);
+    updatePreview();
+    updateProcessBtn();
+    updateCtrlVisibility();
   });
 }
-setupLogoSlot('fileA','imgA','phA','logoA');
-setupLogoSlot('fileB','imgB','phB','logoB');
+setupLogoSlot('fileA','imgA','phA','clearA','logoA');
+setupLogoSlot('fileB','imgB','phB','clearB','logoB');
 
 document.getElementById('clearLogos').addEventListener('click', (e)=>{
   e.preventDefault();
-  localStorage.removeItem('cbd_logoA'); localStorage.removeItem('cbd_logoB');
+  localStorage.removeItem('cbd_logoA');
+  localStorage.removeItem('cbd_logoB');
+  localStorage.removeItem(SETTINGS_KEY);
   location.reload();
 });
 
-// restore saved logos
+function updateCtrlVisibility(){
+  document.getElementById('ctrlA').style.display = state.logoA ? '' : 'none';
+  document.getElementById('ctrlB').style.display = state.logoB ? '' : 'none';
+  document.getElementById('ctrlGap').style.display = (state.logoA && state.logoB) ? '' : 'none';
+}
+
+// restore saved logos + settings
 window.addEventListener('load', async ()=>{
   for(const key of ['logoA','logoB']){
     const saved = localStorage.getItem('cbd_'+key);
@@ -191,8 +222,19 @@ window.addEventListener('load', async ()=>{
       document.getElementById('img'+suffix).src = saved;
       document.getElementById('img'+suffix).style.display='block';
       document.getElementById('ph'+suffix).style.display='none';
+      document.getElementById('clear'+suffix).style.display='inline-block';
     }
   }
+  try{
+    const savedSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
+    if(savedSettings){
+      if(savedSettings.widthPctA!=null){ wRangeA.value = savedSettings.widthPctA; wValA.textContent = savedSettings.widthPctA+'%'; }
+      if(savedSettings.widthPctB!=null){ wRangeB.value = savedSettings.widthPctB; wValB.textContent = savedSettings.widthPctB+'%'; }
+      if(savedSettings.gapPct!=null){ gRange.value = savedSettings.gapPct; gVal.textContent = savedSettings.gapPct+'%'; }
+      if(savedSettings.marginPct!=null){ mRange.value = savedSettings.marginPct; mVal.textContent = savedSettings.marginPct+'%'; }
+    }
+  }catch(e){}
+  updateCtrlVisibility();
   updatePreview();
   updateProcessBtn();
 });
@@ -201,8 +243,15 @@ window.addEventListener('load', async ()=>{
 const wRangeA=document.getElementById('wRangeA'), wRangeB=document.getElementById('wRangeB'), gRange=document.getElementById('gRange'), mRange=document.getElementById('mRange');
 const wValA=document.getElementById('wValA'), wValB=document.getElementById('wValB'), gVal=document.getElementById('gVal'), mVal=document.getElementById('mVal');
 [[wRangeA,wValA,'%'],[wRangeB,wValB,'%'],[gRange,gVal,'%'],[mRange,mVal,'%']].forEach(([r,v,suf])=>{
-  r.addEventListener('input', ()=>{ v.textContent = r.value+suf; updatePreview(); });
+  r.addEventListener('input', ()=>{ v.textContent = r.value+suf; updatePreview(); saveSettings(); });
 });
+
+function saveSettings(){
+  if(!document.getElementById('remember').checked) return;
+  try{
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(getSettings()));
+  }catch(e){}
+}
 
 function getSettings(){
   return {
@@ -217,21 +266,38 @@ function drawComposite(ctx, photoImg, canvasW, canvasH){
   ctx.clearRect(0,0,canvasW,canvasH);
   ctx.drawImage(photoImg,0,0,canvasW,canvasH);
   const {widthPctA,widthPctB,gapPct,marginPct} = getSettings();
-  if(!state.logoA || !state.logoB) return;
-  const logoAW = canvasW*widthPctA/100;
-  const logoAH = logoAW * (state.logoA.naturalHeight/state.logoA.naturalWidth);
-  const logoBW = canvasW*widthPctB/100;
-  const logoBH = logoBW * (state.logoB.naturalHeight/state.logoB.naturalWidth);
-  const gap = canvasW*gapPct/100;
-  const totalW = logoAW+gap+logoBW;
-  const startX = (canvasW-totalW)/2;
   const marginBottom = canvasH*marginPct/100;
-  const maxH = Math.max(logoAH, logoBH);
-  const rowCenterY = canvasH - marginBottom - maxH/2;
-  const yA = rowCenterY - logoAH/2;
-  const yB = rowCenterY - logoBH/2;
-  ctx.drawImage(state.logoA, startX, yA, logoAW, logoAH);
-  ctx.drawImage(state.logoB, startX+logoAW+gap, yB, logoBW, logoBH);
+
+  const hasA = !!state.logoA, hasB = !!state.logoB;
+  if(!hasA && !hasB) return;
+
+  if(hasA && hasB){
+    const logoAW = canvasW*widthPctA/100;
+    const logoAH = logoAW * (state.logoA.naturalHeight/state.logoA.naturalWidth);
+    const logoBW = canvasW*widthPctB/100;
+    const logoBH = logoBW * (state.logoB.naturalHeight/state.logoB.naturalWidth);
+    const gap = canvasW*gapPct/100;
+    const totalW = logoAW+gap+logoBW;
+    const startX = (canvasW-totalW)/2;
+    const maxH = Math.max(logoAH, logoBH);
+    const rowCenterY = canvasH - marginBottom - maxH/2;
+    const yA = rowCenterY - logoAH/2;
+    const yB = rowCenterY - logoBH/2;
+    ctx.drawImage(state.logoA, startX, yA, logoAW, logoAH);
+    ctx.drawImage(state.logoB, startX+logoAW+gap, yB, logoBW, logoBH);
+  } else if(hasA){
+    const logoAW = canvasW*widthPctA/100;
+    const logoAH = logoAW * (state.logoA.naturalHeight/state.logoA.naturalWidth);
+    const x = (canvasW-logoAW)/2;
+    const y = canvasH - marginBottom - logoAH;
+    ctx.drawImage(state.logoA, x, y, logoAW, logoAH);
+  } else if(hasB){
+    const logoBW = canvasW*widthPctB/100;
+    const logoBH = logoBW * (state.logoB.naturalHeight/state.logoB.naturalWidth);
+    const x = (canvasW-logoBW)/2;
+    const y = canvasH - marginBottom - logoBH;
+    ctx.drawImage(state.logoB, x, y, logoBW, logoBH);
+  }
 }
 
 let placeholderImg = null;
@@ -271,7 +337,7 @@ const photoStatus = document.getElementById('photoStatus');
 const resultGrid = document.getElementById('resultGrid');
 
 function updateProcessBtn(){
-  processBtn.disabled = !(state.logoA && state.logoB && state.photos.length>0);
+  processBtn.disabled = !((state.logoA || state.logoB) && state.photos.length>0);
 }
 
 async function addPhotoFiles(fileList){
