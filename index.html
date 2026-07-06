@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>Come!BikeDay 社群圖片 LOGO 套版工具</title>
+<style>
+  :root{
+    --ink:#1c1c1c; --paper:#faf9f6; --line:#e2ddd2; --accent:#c0392b; --accent2:#2c2c2c;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif;
+    background:var(--paper); color:var(--ink); padding:24px 16px 60px;
+  }
+  h1{font-size:22px; text-align:center; margin:0 0 4px;}
+  .sub{text-align:center; color:#777; font-size:13px; margin-bottom:28px;}
+  .card{
+    max-width:760px; margin:0 auto 20px; background:#fff; border:1px solid var(--line);
+    border-radius:12px; padding:20px 22px;
+  }
+  .card h2{
+    font-size:15px; margin:0 0 14px; display:flex; align-items:center; gap:8px;
+  }
+  .card h2 .n{
+    background:var(--ink); color:#fff; width:20px; height:20px; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center; font-size:12px;
+  }
+  .logo-row{display:flex; gap:16px; flex-wrap:wrap;}
+  .logo-slot{
+    flex:1; min-width:220px; border:1.5px dashed var(--line); border-radius:10px;
+    padding:14px; text-align:center; cursor:pointer; position:relative; background:#fcfcfa;
+  }
+  .logo-slot:hover{border-color:var(--accent);}
+  .logo-slot input{display:none;}
+  .logo-slot .lbl{font-size:13px; color:#555; margin-bottom:8px;}
+  .logo-slot img{max-width:100%; max-height:80px; display:block; margin:0 auto; background:
+    repeating-conic-gradient(#eee 0% 25%, #fff 0% 50%) 50% / 14px 14px;}
+  .logo-slot .ph{color:#aaa; font-size:12px; padding:20px 0;}
+  .remember{display:flex; align-items:center; gap:6px; font-size:12px; color:#777; margin-top:14px;}
+  .ctrl{margin-bottom:14px;}
+  .ctrl label{display:flex; justify-content:space-between; font-size:13px; color:#444; margin-bottom:4px;}
+  .ctrl input[type=range]{width:100%;}
+  .preview-wrap{
+    border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#eee;
+    display:flex; align-items:center; justify-content:center; min-height:180px; margin-top:10px;
+  }
+  .preview-wrap canvas{max-width:100%; display:block;}
+  .drop{
+    border:2px dashed var(--line); border-radius:10px; padding:34px 16px; text-align:center;
+    color:#888; font-size:13px; cursor:pointer; transition:.15s;
+  }
+  .drop.drag{border-color:var(--accent); background:#fdf3f2; color:var(--accent);}
+  .drop input{display:none;}
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; margin-top:16px;
+  }
+  .item{border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#fafafa; font-size:11px;}
+  .item img{width:100%; display:block; aspect-ratio:1; object-fit:cover; background:#eee;}
+  .item .name{padding:5px 6px; color:#555; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .item a{
+    display:block; text-align:center; padding:6px; background:var(--ink); color:#fff;
+    text-decoration:none; font-size:12px;
+  }
+  .btn{
+    display:inline-block; background:var(--accent); color:#fff; border:none; border-radius:8px;
+    padding:11px 22px; font-size:14px; cursor:pointer; margin-top:14px;
+  }
+  .btn.secondary{background:var(--ink);}
+  .btn:disabled{background:#ccc; cursor:not-allowed;}
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+  .status{font-size:12px; color:#888; margin-top:8px;}
+</style>
+</head>
+<body>
+
+<h1>Come!BikeDay 社群圖片 LOGO 套版工具</h1>
+<div class="sub">上傳照片，自動壓上固定的兩個 LOGO</div>
+
+<div class="card">
+  <h2><span class="n">1</span>設定兩個 LOGO</h2>
+  <div class="logo-row">
+    <label class="logo-slot" id="slotA">
+      <div class="lbl">LOGO 一（例如 日月潭）</div>
+      <div class="ph" id="phA">點擊上傳圖片</div>
+      <img id="imgA" style="display:none">
+      <input type="file" id="fileA" accept="image/*">
+    </label>
+    <label class="logo-slot" id="slotB">
+      <div class="lbl">LOGO 二（例如 Come!BikeDay）</div>
+      <div class="ph" id="phB">點擊上傳圖片</div>
+      <img id="imgB" style="display:none">
+      <input type="file" id="fileB" accept="image/*">
+    </label>
+  </div>
+  <div class="remember">
+    <input type="checkbox" id="remember" checked>
+    <label for="remember">記住這兩個 LOGO（存在這台電腦的瀏覽器裡，下次打開不用重傳）</label>
+    <button class="btn secondary" style="margin-left:auto;padding:6px 12px;font-size:12px;" id="clearLogos">清除已記住的LOGO</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2><span class="n">2</span>調整大小與位置（兩個LOGO底部置中並排）</h2>
+  <div class="ctrl">
+    <label>LOGO 一 寬度（佔照片寬度比例）<span id="wValA">15%</span></label>
+    <input type="range" id="wRangeA" min="5" max="40" value="15">
+  </div>
+  <div class="ctrl">
+    <label>LOGO 二 寬度（佔照片寬度比例）<span id="wValB">15%</span></label>
+    <input type="range" id="wRangeB" min="5" max="40" value="15">
+  </div>
+  <div class="ctrl">
+    <label>兩個LOGO間距<span id="gVal">2%</span></label>
+    <input type="range" id="gRange" min="0" max="10" value="2" step="0.5">
+  </div>
+  <div class="ctrl">
+    <label>離底部邊距<span id="mVal">5%</span></label>
+    <input type="range" id="mRange" min="0" max="20" value="5">
+  </div>
+  <div class="preview-wrap"><canvas id="previewCanvas"></canvas></div>
+  <div class="status">預覽會套用在下方第一張上傳的照片；還沒上傳照片時顯示灰底示意圖。</div>
+</div>
+
+<div class="card">
+  <h2><span class="n">3</span>上傳照片（可一次選多張）</h2>
+  <div class="drop" id="drop">
+    <div>把照片拖進來，或</div>
+    <button type="button" class="btn secondary" id="pickPhotosBtn" style="margin-top:10px;padding:8px 18px;font-size:13px;">點擊選擇照片檔案</button>
+    <div style="margin-top:6px;">（支援一次選多張）</div>
+    <input type="file" id="filePhotos" accept="image/*" multiple style="display:none">
+  </div>
+  <div class="row">
+    <button class="btn" id="processBtn" disabled>套用LOGO並產生圖片</button>
+    <button class="btn secondary" id="downloadAllBtn" style="display:none;">全部下載JPG</button>
+  </div>
+  <div class="status" id="photoStatus"></div>
+  <div class="grid" id="resultGrid"></div>
+</div>
+
+<script>
+const state = { logoA:null, logoB:null, photos:[], results:[] };
+
+function readAsImage(file){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = ()=>resolve({img, dataUrl:e.target.result});
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function setupLogoSlot(fileInputId, imgId, phId, key){
+  const input = document.getElementById(fileInputId);
+  const imgEl = document.getElementById(imgId);
+  const ph = document.getElementById(phId);
+  input.addEventListener('change', async ()=>{
+    if(!input.files[0]) return;
+    const {img, dataUrl} = await readAsImage(input.files[0]);
+    state[key] = img;
+    imgEl.src = dataUrl; imgEl.style.display='block'; ph.style.display='none';
+    if(document.getElementById('remember').checked){
+      try{ localStorage.setItem('cbd_'+key, dataUrl); }catch(e){}
+    }
+    updatePreview();
+    updateProcessBtn();
+  });
+}
+setupLogoSlot('fileA','imgA','phA','logoA');
+setupLogoSlot('fileB','imgB','phB','logoB');
+
+document.getElementById('clearLogos').addEventListener('click', (e)=>{
+  e.preventDefault();
+  localStorage.removeItem('cbd_logoA'); localStorage.removeItem('cbd_logoB');
+  location.reload();
+});
+
+// restore saved logos
+window.addEventListener('load', async ()=>{
+  for(const key of ['logoA','logoB']){
+    const saved = localStorage.getItem('cbd_'+key);
+    if(saved){
+      const img = new Image();
+      await new Promise(res=>{ img.onload=res; img.src=saved; });
+      state[key]=img;
+      const suffix = key==='logoA' ? 'A' : 'B';
+      document.getElementById('img'+suffix).src = saved;
+      document.getElementById('img'+suffix).style.display='block';
+      document.getElementById('ph'+suffix).style.display='none';
+    }
+  }
+  updatePreview();
+  updateProcessBtn();
+});
+
+// sliders
+const wRangeA=document.getElementById('wRangeA'), wRangeB=document.getElementById('wRangeB'), gRange=document.getElementById('gRange'), mRange=document.getElementById('mRange');
+const wValA=document.getElementById('wValA'), wValB=document.getElementById('wValB'), gVal=document.getElementById('gVal'), mVal=document.getElementById('mVal');
+[[wRangeA,wValA,'%'],[wRangeB,wValB,'%'],[gRange,gVal,'%'],[mRange,mVal,'%']].forEach(([r,v,suf])=>{
+  r.addEventListener('input', ()=>{ v.textContent = r.value+suf; updatePreview(); });
+});
+
+function getSettings(){
+  return {
+    widthPctA: parseFloat(wRangeA.value),
+    widthPctB: parseFloat(wRangeB.value),
+    gapPct: parseFloat(gRange.value),
+    marginPct: parseFloat(mRange.value)
+  };
+}
+
+function drawComposite(ctx, photoImg, canvasW, canvasH){
+  ctx.clearRect(0,0,canvasW,canvasH);
+  ctx.drawImage(photoImg,0,0,canvasW,canvasH);
+  const {widthPctA,widthPctB,gapPct,marginPct} = getSettings();
+  if(!state.logoA || !state.logoB) return;
+  const logoAW = canvasW*widthPctA/100;
+  const logoAH = logoAW * (state.logoA.naturalHeight/state.logoA.naturalWidth);
+  const logoBW = canvasW*widthPctB/100;
+  const logoBH = logoBW * (state.logoB.naturalHeight/state.logoB.naturalWidth);
+  const gap = canvasW*gapPct/100;
+  const totalW = logoAW+gap+logoBW;
+  const startX = (canvasW-totalW)/2;
+  const marginBottom = canvasH*marginPct/100;
+  const maxH = Math.max(logoAH, logoBH);
+  const rowCenterY = canvasH - marginBottom - maxH/2;
+  const yA = rowCenterY - logoAH/2;
+  const yB = rowCenterY - logoBH/2;
+  ctx.drawImage(state.logoA, startX, yA, logoAW, logoAH);
+  ctx.drawImage(state.logoB, startX+logoAW+gap, yB, logoBW, logoBH);
+}
+
+let placeholderImg = null;
+function getPlaceholder(){
+  if(placeholderImg) return placeholderImg;
+  const c = document.createElement('canvas');
+  c.width=1080; c.height=1080;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#d8d8d8'; ctx.fillRect(0,0,1080,1080);
+  ctx.fillStyle='#aaa'; ctx.font='40px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('範例照片', 540, 540);
+  const img = new Image(); img.src = c.toDataURL();
+  placeholderImg = img;
+  return img;
+}
+
+function updatePreview(){
+  const canvas = document.getElementById('previewCanvas');
+  const src = state.photos[0] ? state.photos[0].img : null;
+  const useImg = src || getPlaceholder();
+  const draw = ()=>{
+    const maxW = 480;
+    const scale = Math.min(1, maxW/useImg.naturalWidth);
+    canvas.width = useImg.naturalWidth*scale;
+    canvas.height = useImg.naturalHeight*scale;
+    drawComposite(canvas.getContext('2d'), useImg, canvas.width, canvas.height);
+  };
+  if(useImg.complete) draw(); else useImg.onload = draw;
+}
+
+// ---- photo upload ----
+const drop = document.getElementById('drop');
+const filePhotos = document.getElementById('filePhotos');
+const processBtn = document.getElementById('processBtn');
+const downloadAllBtn = document.getElementById('downloadAllBtn');
+const photoStatus = document.getElementById('photoStatus');
+const resultGrid = document.getElementById('resultGrid');
+
+function updateProcessBtn(){
+  processBtn.disabled = !(state.logoA && state.logoB && state.photos.length>0);
+}
+
+async function addPhotoFiles(fileList){
+  const files = Array.from(fileList).filter(f=>f.type.startsWith('image/'));
+  for(const file of files){
+    const {img} = await readAsImage(file);
+    state.photos.push({file, img, name:file.name, type:file.type});
+  }
+  photoStatus.textContent = state.photos.length + ' 張照片已加入（尚未處理）';
+  updateProcessBtn();
+  updatePreview();
+}
+
+const pickPhotosBtn = document.getElementById('pickPhotosBtn');
+pickPhotosBtn.addEventListener('click', (e)=>{ e.stopPropagation(); filePhotos.click(); });
+drop.addEventListener('click', (e)=>{
+  if(e.target === pickPhotosBtn) return;
+  filePhotos.click();
+});
+filePhotos.addEventListener('change', ()=> addPhotoFiles(filePhotos.files));
+
+['dragover','dragenter'].forEach(ev=>{
+  drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.add('drag'); });
+});
+['dragleave','drop'].forEach(ev=>{
+  drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.remove('drag'); });
+});
+drop.addEventListener('drop', e=>{
+  e.preventDefault();
+  if(e.dataTransfer.files.length) addPhotoFiles(e.dataTransfer.files);
+});
+
+// 輸出一律強制轉成 JPG，方便直接發社群
+function extForType(type){
+  return {ext:'jpg', mime:'image/jpeg'};
+}
+
+processBtn.addEventListener('click', ()=>{
+  resultGrid.innerHTML='';
+  state.results = [];
+  processBtn.disabled = true;
+  photoStatus.textContent = '處理中...';
+
+  state.photos.forEach((p, idx)=>{
+    const canvas = document.createElement('canvas');
+    canvas.width = p.img.naturalWidth;
+    canvas.height = p.img.naturalHeight;
+    drawComposite(canvas.getContext('2d'), p.img, canvas.width, canvas.height);
+
+    const {ext, mime} = extForType(p.type);
+    const baseName = p.name.replace(/\.[^.]+$/, '');
+    const outName = baseName + '_logo.' + ext;
+
+    canvas.toBlob((blob)=>{
+      const url = URL.createObjectURL(blob);
+      state.results.push({url, name:outName});
+
+      const item = document.createElement('div');
+      item.className='item';
+      item.innerHTML = `
+        <img src="${url}">
+        <div class="name" title="${outName}">${outName}</div>
+        <a href="${url}" download="${outName}">下載JPG</a>
+      `;
+      resultGrid.appendChild(item);
+
+      if(state.results.length === state.photos.length){
+        photoStatus.textContent = '完成！共 ' + state.results.length + ' 張，已加上LOGO。';
+        downloadAllBtn.style.display = 'inline-block';
+        processBtn.disabled = false;
+      }
+    }, mime, 0.92);
+  });
+});
+
+downloadAllBtn.addEventListener('click', ()=>{
+  state.results.forEach((r, i)=>{
+    setTimeout(()=>{
+      const a = document.createElement('a');
+      a.href = r.url; a.download = r.name;
+      document.body.appendChild(a); a.click(); a.remove();
+    }, i*250);
+  });
+});
+</script>
+</body>
+</html>
